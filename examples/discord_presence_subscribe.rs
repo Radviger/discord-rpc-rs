@@ -14,7 +14,10 @@ fn main() {
 
     let mut drpc = DiscordRPC::new(610434593505542149);
 
-    drpc.start();
+    let mut this = drpc.clone();
+    std::thread::spawn(move || {
+        this.start_loop(|e| {}, |e| {}, |h| println!("Handshake: {:?}", h));
+    });
 
     drpc.subscribe(Event::ActivityJoin, |j| j
         .secret("123456"))
@@ -32,7 +35,7 @@ fn main() {
 
     drpc.set_activity(|a| {
         a.details("Играет на сервере")
-            .assets(|ast| ast.small_image("logo"))
+            .assets(|ast| ast.small_image("logo").large_image("logo"))
             .state("Alpha")
             .party(|p| p.size((25, 100)))
             .timestamps(|t| t.start(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()))

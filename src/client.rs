@@ -3,14 +3,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 
 use connection::Manager as ConnectionManager;
-use models::{
-    OpCode,
-    Command,
-    Event,
-    payload::Payload,
-    message::Message,
-    commands::{SubscriptionArgs, Subscription},
-};
+use models::{OpCode, Command, Event, payload::Payload, message::Message, commands::{SubscriptionArgs, Subscription}, Handshake};
 #[cfg(feature = "rich_presence")]
 use models::rich_presence::{
     SetActivityArgs,
@@ -35,12 +28,12 @@ impl Client {
     pub fn start(&mut self) {
         let mut this = self.clone();
         std::thread::spawn(move || {
-            this.start_loop(|e| error!("Connection failed: {:?}", e), |e| error!("Rx/tx error: {:?}", e));
+            this.start_loop(|e| error!("Connection failed: {:?}", e), |e| error!("Rx/tx error: {:?}", e), |h| {});
         });
     }
 
-    pub fn start_loop<C, S>(&mut self, connection_error: C, send_error: S) where C: Fn(Error), S: Fn(Error) {
-        self.connection_manager.start_loop(connection_error, send_error)
+    pub fn start_loop<C, S, H>(&mut self, connection_error: C, send_error: S, handshake_fn: H) where C: Fn(Error), S: Fn(Error), H: Fn(Handshake) {
+        self.connection_manager.start_loop(connection_error, send_error, handshake_fn)
     }
 
     fn execute<A, E>(&mut self, cmd: Command, args: A, evt: Option<Event>) -> Result<Payload<E>>

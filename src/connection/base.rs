@@ -11,6 +11,8 @@ use bytes::BytesMut;
 use utils;
 use models::message::{Message, OpCode};
 use error::{Error, Result};
+use models::payload::Payload;
+use models::Handshake;
 
 
 /// Wait for a non-blocking connection until it's complete.
@@ -18,7 +20,7 @@ macro_rules! try_until_done {
     [ $e:expr ] => {
         loop {
             match $e {
-                Ok(_) => break,
+                Ok(r) => break r,
                 Err(Error::IoError(ref err)) if err.kind() == ErrorKind::WouldBlock => (),
                 Err(why) => return Err(why),
             }
@@ -42,7 +44,7 @@ pub trait Connection: Sized {
         Self::ipc_path().join(format!("discord-ipc-{}", n))
     }
 
-    fn handshake(&mut self, client_id: u64) -> Result<()> {
+    fn handshake(&mut self, client_id: u64) -> Result<Handshake> {
         let hs = json![{
             "client_id": client_id.to_string(),
             "v": 1,
@@ -50,9 +52,9 @@ pub trait Connection: Sized {
         }];
 
         try_until_done!(self.send(Message::new(OpCode::Handshake, hs.clone())));
-        try_until_done!(self.recv());
-
-        Ok(())
+        let Message { payload, .. } = try_until_done!(self.recv());
+        let response: Payload<Handshake> = serde_json::from_str(&payload)?;
+        Ok(response.data.expect("Invalid handshake response"))
     }
 
     fn ping(&mut self) -> Result<OpCode> {

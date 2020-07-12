@@ -13,7 +13,7 @@ use super::{
     Connection,
     SocketConnection,
 };
-use models::Message;
+use models::{Message, Handshake};
 use error::{Result, Error};
 
 
@@ -26,7 +26,7 @@ pub struct Manager {
     client_id: u64,
     outbound: (Rx, Tx),
     inbound: (Rx, Tx),
-    handshake_completed: bool,
+    handshake_completed: bool
 }
 
 impl Manager {
@@ -44,7 +44,7 @@ impl Manager {
         }
     }
 
-    pub fn start_loop<C, S>(&mut self, connection_error: C, send_error: S) where C: Fn(Error), S: Fn(Error) {
+    pub fn start_loop<C, S, H>(&mut self, connection_error: C, send_error: S, handshake_fn: H) where C: Fn(Error), S: Fn(Error), H: Fn(Handshake) {
         let mut inbound = self.inbound.1.clone();
         let outbound = self.outbound.0.clone();
 
@@ -72,7 +72,10 @@ impl Manager {
                             }
                             thread::sleep(time::Duration::from_secs(10));
                         },
-                        _ => self.handshake_completed = true,
+                        Ok(handshake) => {
+                            handshake_fn(handshake);
+                            self.handshake_completed = true;
+                        },
                     }
                 }
             }
@@ -89,24 +92,20 @@ impl Manager {
         Ok(message)
     }
 
-    fn connect(&mut self) -> Result<()> {
-        if self.connection.is_some() {
-            return Ok(());
-        }
-
+    fn connect(&mut self) -> Result<Handshake> {
         debug!("Connecting");
 
         let mut new_connection = SocketConnection::connect()?;
 
         debug!("Performing handshake");
-        new_connection.handshake(self.client_id)?;
+        let handshake = new_connection.handshake(self.client_id)?;
         debug!("Handshake completed");
 
         self.connection = Arc::new(Some(Mutex::new(new_connection)));
 
         debug!("Connected");
 
-        Ok(())
+        Ok(handshake)
     }
 
     fn disconnect(&mut self) {

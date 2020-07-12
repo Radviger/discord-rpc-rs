@@ -34,6 +34,31 @@ pub enum Event {
     ActivityJoinRequest,
 }
 
+#[derive(Debug, PartialEq, Deserialize, Serialize, Clone)]
+pub struct Handshake {
+    pub v: u32,
+    pub config: Config,
+    pub user: User
+}
+
+#[derive(Debug, PartialEq, Deserialize, Serialize, Clone)]
+pub struct Config {
+    cdn_host: String,
+    api_endpoint: String,
+    environment: String
+}
+
+#[derive(Debug, PartialEq, Deserialize, Serialize, Clone)]
+pub struct User {
+    id: String,
+    username: String,
+    discriminator: String,
+    avatar: Option<String>,
+    bot: bool,
+    flags: u32,
+    premium_type: u32
+}
+
 pub use self::message::{Message, OpCode};
 pub use self::commands::*;
 pub use self::events::*;
