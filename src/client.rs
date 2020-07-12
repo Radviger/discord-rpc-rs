@@ -33,7 +33,14 @@ impl Client {
     }
 
     pub fn start(&mut self) {
-        self.connection_manager.start();
+        let mut this = self.clone();
+        std::thread::spawn(move || {
+            this.start_loop(|e| error!("Connection failed: {:?}", e), |e| error!("Rx/tx error: {:?}", e));
+        });
+    }
+
+    pub fn start_loop<C, S>(&mut self, connection_error: C, send_error: S) where C: Fn(Error), S: Fn(Error) {
+        self.connection_manager.start_loop(connection_error, send_error)
     }
 
     fn execute<A, E>(&mut self, cmd: Command, args: A, evt: Option<Event>) -> Result<Payload<E>>

@@ -44,11 +44,39 @@ impl Manager {
         }
     }
 
-    pub fn start(&mut self) {
-        let manager_inner = self.clone();
-        thread::spawn(move || {
-            send_and_receive_loop(manager_inner);
-        });
+    pub fn start_loop<C, S>(&mut self, connection_error: C, send_error: S) where C: Fn(Error), S: Fn(Error) {
+        let mut inbound = self.inbound.1.clone();
+        let outbound = self.outbound.0.clone();
+
+        loop {
+            let connection = self.connection.clone();
+
+            match *connection {
+                Some(ref conn) => {
+                    let mut connection = conn.lock();
+                    match send_and_receive(&mut *connection, &mut inbound, &outbound) {
+                        Err(Error::IoError(ref err)) if err.kind() == ErrorKind::WouldBlock => (),
+                        Err(Error::IoError(_)) | Err(Error::ConnectionClosed) => self.disconnect(),
+                        Err(why) => send_error(why),
+                        _ => (),
+                    }
+
+                    thread::sleep(time::Duration::from_millis(500));
+                },
+                None => {
+                    match self.connect() {
+                        Err(err) => {
+                            match err {
+                                Error::IoError(ref err) if err.kind() == ErrorKind::ConnectionRefused => (),
+                                why => connection_error(why),
+                            }
+                            thread::sleep(time::Duration::from_secs(10));
+                        },
+                        _ => self.handshake_completed = true,
+                    }
+                }
+            }
+        }
     }
 
     pub fn send(&self, message: Message) -> Result<()> {
@@ -86,44 +114,6 @@ impl Manager {
         self.connection = Arc::new(None);
     }
 
-}
-
-
-fn send_and_receive_loop(mut manager: Manager) {
-    debug!("Starting sender loop");
-
-    let mut inbound = manager.inbound.1.clone();
-    let outbound = manager.outbound.0.clone();
-
-    loop {
-        let connection = manager.connection.clone();
-
-        match *connection {
-            Some(ref conn) => {
-                let mut connection = conn.lock();
-                match send_and_receive(&mut *connection, &mut inbound, &outbound) {
-                    Err(Error::IoError(ref err)) if err.kind() == ErrorKind::WouldBlock => (),
-                    Err(Error::IoError(_)) | Err(Error::ConnectionClosed) => manager.disconnect(),
-                    Err(why) => error!("error: {}", why),
-                    _ => (),
-                }
-
-                thread::sleep(time::Duration::from_millis(500));
-            },
-            None => {
-                match manager.connect() {
-                    Err(err) => {
-                        match err {
-                            Error::IoError(ref err) if err.kind() == ErrorKind::ConnectionRefused => (),
-                            why => error!("Failed to connect: {:?}", why),
-                        }
-                        thread::sleep(time::Duration::from_secs(10));
-                    },
-                    _ => manager.handshake_completed = true,
-                }
-            }
-        }
-    }
 }
 
 fn send_and_receive(connection: &mut SocketConnection, inbound: &mut Tx, outbound: &Rx) -> Result<()> {

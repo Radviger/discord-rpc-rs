@@ -1,9 +1,9 @@
 extern crate simplelog;
-extern crate discord_rpc_client;
+extern crate discord_rpc;
 
 use std::io;
 use simplelog::*;
-use discord_rpc_client::Client as DiscordRPC;
+use discord_rpc::Client as DiscordRPC;
 
 fn main() {
     TermLogger::init(LevelFilter::Debug, Config::default()).unwrap();
