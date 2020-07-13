@@ -43,20 +43,20 @@ pub struct Handshake {
 
 #[derive(Debug, PartialEq, Deserialize, Serialize, Clone)]
 pub struct Config {
-    cdn_host: String,
-    api_endpoint: String,
-    environment: String
+    pub cdn_host: String,
+    pub api_endpoint: String,
+    pub environment: String
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize, Clone)]
 pub struct User {
-    id: String,
-    username: String,
-    discriminator: String,
-    avatar: Option<String>,
-    bot: bool,
-    flags: u32,
-    premium_type: u32
+    pub id: String,
+    pub username: String,
+    pub discriminator: String,
+    pub avatar: Option<String>,
+    pub bot: bool,
+    pub flags: u32,
+    pub premium_type: u32
 }
 
 pub use self::message::{Message, OpCode};
