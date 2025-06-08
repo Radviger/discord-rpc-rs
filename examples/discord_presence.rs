@@ -6,7 +6,7 @@ use simplelog::*;
 use discord_rpc::Client as DiscordRPC;
 
 fn main() {
-    TermLogger::init(LevelFilter::Debug, Config::default()).unwrap();
+    TermLogger::init(LevelFilter::Debug, Config::default(), TerminalMode::Mixed, ColorChoice::Auto).unwrap();
 
     let mut drpc = DiscordRPC::new(425407036495495169);
 

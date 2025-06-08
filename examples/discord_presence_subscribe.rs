@@ -10,7 +10,7 @@ use discord_rpc::{
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn main() {
-    TermLogger::init(LevelFilter::Debug, Config::default()).unwrap();
+    TermLogger::init(LevelFilter::Debug, Config::default(), TerminalMode::Mixed, ColorChoice::Auto).unwrap();
 
     let mut drpc = DiscordRPC::new(610434593505542149);
 

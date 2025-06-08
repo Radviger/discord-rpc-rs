@@ -2,7 +2,7 @@
 authors     = ["Radviger <radviger@gmail.com>"]
 name        = "discord-rpc"
 repository  = "https://github.com/Radviger/discord-rpc-rs"
-version     = "0.3.0"
+version     = "0.4.0"
 
 [dependencies]
 serde        = "^1.0"
@@ -10,19 +10,19 @@ serde_derive = "^1.0"
 serde_json   = "^1.0"
 byteorder    = "^1.0"
 log          = "~0.4"
-bytes        = "^0.4"
-parking_lot  = "^0.7"
-crossbeam-channel = "^0.3"
+bytes        = "^1.10"
+parking_lot  = "^0.12"
+crossbeam-channel = "^0.5"
 
 [target.'cfg(windows)'.dependencies]
-named_pipe   = "0.3.0"
+named_pipe   = "0.4.1"
 
 [dependencies.uuid]
-version  = "^0.6.2"
+version  = "^1.17.0"
 features = ["v4"]
 
 [dev-dependencies]
-simplelog = "~0.5"
+simplelog = "~0.12"
 
 [features]
 default = ["rich_presence"]
